@@ -31,6 +31,7 @@
 
 
 -  公众号API调用
+
     String reply=MpApi.getInstance(msg.getAppid()).getReplyApi().buildReply(new ReplyText(msg, "欢迎使用"));
     WebContext.getResponse().getWriter().print(reply);
 
