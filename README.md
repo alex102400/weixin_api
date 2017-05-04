@@ -7,6 +7,7 @@
  -  初始化微信开放平台API服务
 
     OpenApiConfig config = new OpenApiConfig();
+    
     OpenApi.getInstance().init(config);
     
 
@@ -33,5 +34,6 @@
 -  公众号API调用
 
     String reply=MpApi.getInstance(msg.getAppid()).getReplyApi().buildReply(new ReplyText(msg, "欢迎使用"));
+    
     WebContext.getResponse().getWriter().print(reply);
 
