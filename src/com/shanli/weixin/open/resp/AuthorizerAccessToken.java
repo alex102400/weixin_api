@@ -17,7 +17,11 @@ public class AuthorizerAccessToken extends BaseExpires {
 	 */
 	private static final long serialVersionUID = -4966017237063412582L;
 
-	private String mpAppid;
+	/**
+	 * 授权公众号ID。只有api_query_auth才有
+	 */
+	@SerializedName("authorizer_appid")
+	private String authorizerAppid;
 
 	@SerializedName("authorizer_access_token")
 	private String authorizerAccessToken;
@@ -62,18 +66,20 @@ public class AuthorizerAccessToken extends BaseExpires {
 	}
 
 	/**
-	 * @return the mpAppid
+	 * 授权公众号ID。已经做了处理，不仅api_query_auth有api_authorizer_token也会有。
+	 * @return the authorizerAppid
 	 */
-	public String getMpAppid() {
-		return mpAppid;
+	public String getAuthorizerAppid() {
+		return authorizerAppid;
 	}
 
 	/**
-	 * @param mpAppid
-	 *            the mpAppid to set
+	 * 授权公众号ID。已经做了处理，不仅api_query_auth有api_authorizer_token也会有。
+	 * @param authorizerAppid
+	 *            the authorizerAppid to set
 	 */
-	public void setMpAppid(String mpAppid) {
-		this.mpAppid = mpAppid;
+	public void setAuthorizerAppid(String authorizerAppid) {
+		this.authorizerAppid = authorizerAppid;
 	}
 
 }

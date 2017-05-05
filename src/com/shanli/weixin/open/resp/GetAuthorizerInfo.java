@@ -9,7 +9,7 @@ import com.shanli.weixin.bean.BaseResp;
  * @author alex
  *
  */
-public class GetAuthorizerInfo extends BaseResp{
+public class GetAuthorizerInfo extends BaseResp {
 
 	@SerializedName("authorizer_info")
 	private AuthorizerInfo authorizerInfo;
@@ -446,6 +446,11 @@ public class GetAuthorizerInfo extends BaseResp{
 			this.funcscopeCategory = funcscopeCategory;
 		}
 
+		@Override
+		public String toString() {
+			return funcscopeCategory == null ? "" : funcscopeCategory.toString();
+		}
+
 	}
 
 	/**
@@ -463,6 +468,11 @@ public class GetAuthorizerInfo extends BaseResp{
 
 		public void setId(Integer id) {
 			this.id = id;
+		}
+
+		@Override
+		public String toString() {
+			return id == null ? "" : id.toString();
 		}
 
 	}

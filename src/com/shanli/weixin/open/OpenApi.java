@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.TreeMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -26,7 +25,6 @@ import com.shanli.weixin.mp.recv.UserMsgTypeEnum;
 import com.shanli.weixin.mp.recv.event.MsgEvent;
 import com.shanli.weixin.mp.recv.event.MsgEventTypeEnum;
 import com.shanli.weixin.open.event.OpenEvent;
-import com.shanli.weixin.open.event.OpenEventAuthorized;
 import com.shanli.weixin.open.event.OpenEventTicket;
 import com.shanli.weixin.open.event.OpenEventTypeEnum;
 import com.shanli.weixin.open.event.OpenEventUnAuthorized;
@@ -74,12 +72,6 @@ public class OpenApi {
 	 * 是否已经初始化
 	 */
 	private volatile boolean inited = false;
-	/**
-	 * 公众号授权码与ID映射<authCode,appid>。用于用户授权成功页面回调后通过授权码查询APPID。
-	 * 只保留最近的几个即可，授权并发量不可能很大。
-	 * 
-	 */
-	private LRUMap mpAuthcode2Appids = new LRUMap(128);
 
 	/**
 	 * 消息与事件的ID缓存，用于去重。
@@ -157,13 +149,9 @@ public class OpenApi {
 			runtime.setComponentVerifyTicket(ticket);
 
 		}
-		// 公众号授权事件和授权更新事件。同时会有页面回调,页同上只有auth_code/expires_in参数。
+		// 公众号授权事件和授权更新事件。
 		if (OpenEventTypeEnum.authorized.equals(event.getInfoType())
 				|| OpenEventTypeEnum.updateauthorized.equals(event.getInfoType())) {
-			OpenEventAuthorized evt = ((OpenEventAuthorized) event);
-			final String mpAuthCode = evt.getAuthorizationCode();
-			final String mpAppid = evt.getAuthorizerAppid();
-			mpAuthcode2Appids.put(mpAuthCode, mpAppid);
 
 		}
 		// 公众号取消授权事件
@@ -225,34 +213,6 @@ public class OpenApi {
 	 */
 	public String onPublishDetect(UserMsg msg) {
 		return null;
-	}
-
-	/**
-	 * 根据授权码获得公众号ID。 由于回调页面和授权事件是异步的，因此需要进行等待。
-	 * 
-	 * @param mpAuthcode
-	 *            授权码
-	 * @param maxWaitMilliseconds
-	 *            最大等待秒数
-	 * @return 返回授权码对应的Appid，并从缓存中移除。
-	 * @throws TimeoutException
-	 *             超时未能获取对应公众号appid
-	 */
-	public String waitMpAppidByAuthcode(String mpAuthcode, int maxWaitMilliseconds) throws TimeoutException {
-		String mpAppid = null;
-		try {
-			while (mpAppid == null && maxWaitMilliseconds > 0) {
-				mpAppid = (String) mpAuthcode2Appids.get(mpAuthcode);
-				maxWaitMilliseconds -= 10;
-				Thread.sleep(10);
-			}
-		} catch (InterruptedException e) {
-		}
-		if (mpAppid == null) {
-			throw new TimeoutException("未能在指定时间内获得mpAuthcode对应的mpAppid");
-		}
-
-		return mpAppid;
 	}
 
 	/**
@@ -370,9 +330,8 @@ public class OpenApi {
 	 * @param mpAuthcode
 	 * @return
 	 * @throws AccessTokenFailException
-	 * @throws TimeoutException
 	 */
-	public AuthorizerAccessToken apiQueryAuth(String mpAuthcode) throws AccessTokenFailException, TimeoutException {
+	public AuthorizerAccessToken apiQueryAuth(String mpAuthcode) throws AccessTokenFailException {
 
 		ComponentAccessToken caToken = apiComponentToken();
 
@@ -396,10 +355,8 @@ public class OpenApi {
 		}
 
 		AuthorizerAccessToken mpToken = resp.getAuthorizationInfo();
-		String mpAppid = waitMpAppidByAuthcode(mpAuthcode, 15000);
-		mpToken.setMpAppid(mpAppid);
 		if (isApiRespOK(resp)) {
-			runtime.putMpAuthorizerToken(mpAppid, mpToken);
+			runtime.putMpAuthorizerToken(mpToken.getAuthorizerAppid(), mpToken);
 
 			return mpToken;
 		}
@@ -443,7 +400,7 @@ public class OpenApi {
 		if (log.isInfoEnabled()) {
 			log.info(String.format("apiAuthorizerToken %s", resp));
 		}
-		resp.setMpAppid(mpAppid);
+		resp.setAuthorizerAppid(mpAppid);// 被填mpAppid
 
 		if (isApiRespOK(resp)) {
 			runtime.putMpAuthorizerToken(mpAppid, resp);
